@@ -48,6 +48,12 @@ app.get('/users', (req, res) => {
 });
 
 app.get('/users/:id',authenticateToken, (req, res) => {
+    const id = parseInt(req.params.id)
+    if (isNaN(id)){
+        return res.status(400).json(
+            {error: "Invalid user ID"}
+        )
+    }
     const user = users.find(u => u.id === parseInt(req.params.id));
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -56,10 +62,18 @@ app.get('/users/:id',authenticateToken, (req, res) => {
 });
 
 app.put('/users/:id', authenticateToken, (req, res) => {
-    const user = users.find(u => u.id === parseInt(req.params.id));
+    const id = parseInt(req.params.id);
+
+     if (isNaN(id)){
+        return res.status(400).json({error: "Invalid user ID"})
+    }
+
+    const user = users.find(u => u.id === id);
+    
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
     }
+
     if (!req.user || req.user.id !== parseInt(req.params.id)) {
         return res.status(403).json({ error: 'You can only update your own account' });
     }
@@ -73,6 +87,10 @@ app.put('/users/:id', authenticateToken, (req, res) => {
 });
 
 app.delete('/users/:id', authenticateToken, (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)){
+        return res.status(400).json({error: 'Invalid user ID'});
+    }
     const userIndex = users.findIndex(u => u.id === parseInt(req.params.id));
     if (userIndex === -1) {
         return res.status(404).json({ error: 'User not found' });
@@ -87,6 +105,8 @@ app.delete('/users/:id', authenticateToken, (req, res) => {
 // ====== Auth routes ======
 
 app.post('/signup', async (req,res) => {
+
+    try {
     const {name, email, password} = req.body;
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'Name, email, and password are required' });
@@ -96,10 +116,15 @@ app.post('/signup', async (req,res) => {
     const newUser = {id: nextID++, name, email, password: hashedPassword};
     users.push(newUser);
     res.status(201).json({id: newUser.id, name: newUser.name, email: newUser.email});
+}
+    catch (err) {
+    res.status(500).json({error: "Something went wrong"})
+}
 
 })
 
 app.post('/login', async (req,res) => {
+    try {
     const {email, password} = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required' });
@@ -118,6 +143,10 @@ app.post('/login', async (req,res) => {
 
 
     res.json({ message: 'Login successful', token });
+    }
+    catch (err) {
+        res.status(500).json({error: "Something went wrong"})
+    }
 });
 
 
