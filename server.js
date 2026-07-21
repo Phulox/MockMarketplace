@@ -129,6 +129,7 @@ app.post('/signup', async (req,res) => {
     res.status(201).json({id: newUser.id, name: newUser.name, email: newUser.email});
 }
     catch (err) {
+        console.error(err);
     res.status(500).json({error: "Something went wrong"})
 }
 
