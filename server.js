@@ -33,18 +33,25 @@ let nextID = 1;
 app.get('/', (req, res) => res.send('Welcome to MockMarketplace'));
 
 // ====== CRUD operations for users ====
-app.post('/users', (req, res) => {
-    const {name, email} = req.body;
-    if (!name || !email) {
-        return res.status(400).json({ error: 'Name and email are required' });
-    }
-    const newUser = {id: nextID++, name, email};
-    users.push(newUser);
-    res.status(201).json(newUser);
-});
 
-app.get('/users', (req, res) => {
-    res.json(users);
+app.get('/users', authenticateToken, (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const pageLimit = parseInt(req.query.limit) || 5;
+    const startIndex = (page -1) * pageLimit;
+    const endIndex = startIndex + pageLimit;
+    const paginatedUsers = users.slice(startIndex, endIndex).map(u => (
+        {
+            id: u.id,
+            name: u.name,
+        }
+    ))
+    res.json({
+        page: page,
+        limit: pageLimit,
+        totalUsers: users.length,
+        totalPages: Math.ceil(users.length / pageLimit),
+        data: paginatedUsers
+    });
 });
 
 app.get('/users/:id',authenticateToken, (req, res) => {
@@ -110,6 +117,10 @@ app.post('/signup', async (req,res) => {
     const {name, email, password} = req.body;
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+    // Check if the email already exists
+    if (users.find(u => u.email === email)) {
+        return res.status(400).json({ error: 'Email already exists' });
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
